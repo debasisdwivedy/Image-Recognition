@@ -346,27 +346,31 @@ return indices;
  */
 void compute_pitch(vector<int> line_positions,vector<DetectedSymbol> &symbols){
 for(int i=0;i<symbols.size();i++){
-	if(symbols[i].row+9 <line_positions[1] || (symbols[i].row+9>line_positions[4]-3 && symbols[i].row+9<line_positions[4]+3) ||(symbols[i].row+9>line_positions[6]+5 && symbols[i].row+9<line_positions[6]+8)||(symbols[i].row+9>line_positions[10]-3 && symbols[i].row+9<line_positions[10]+3) ){
-		symbols[i].pitch='G';
-	}
-	else if((symbols[i].row+9>line_positions[1]-3 && symbols[i].row+9 <=line_positions[1]+3)||(symbols[i].row+9>line_positions[4]+5 && symbols[i].row+9 <=line_positions[4]+8) ||(symbols[i].row+9>line_positions[7]-3 && symbols[i].row+9 <=line_positions[7]+3)||(symbols[i].row+9>line_positions[10]+5 && symbols[i].row+9 <=line_positions[10]+8)){
-		symbols[i].pitch='F';
-	}
-	else if((symbols[i].row+9>line_positions[1]+5&& symbols[i].row+9 <=line_positions[1]+8)||(symbols[i].row+9>line_positions[5]-3 && symbols[i].row+9 <=line_positions[5]+3)||(symbols[i].row+9>line_positions[7]+5 && symbols[i].row+9 <=line_positions[7]+8)||((symbols[i].row+9>line_positions[10]+8 && symbols[i].row+9 <=line_positions[10]+14))){
-		symbols[i].pitch='E';
-	}
-	else if((symbols[i].row+9>line_positions[2]-3 && symbols[i].row+9 <=line_positions[2]+3)||(symbols[i].row+9>line_positions[5]+5&& symbols[i].row+9 <=line_positions[5]+8)||(symbols[i].row+9>line_positions[8]-3&& symbols[i].row+9 <=line_positions[8]+3)){
-			symbols[i].pitch='D';
-		}
-	else if((symbols[i].row+9>line_positions[2]+5 && symbols[i].row+9 <=line_positions[2]+8)||(symbols[i].row+9>line_positions[5]+8 && symbols[i].row+9 <=line_positions[5]+10)||(symbols[i].row+9>line_positions[6]-14 && symbols[i].row+9 <=line_positions[6]-8)||(symbols[i].row+9>line_positions[8]+5 && symbols[i].row+9 <=line_positions[8]+8)){
-				symbols[i].pitch='C';
+	for(int j=0;j<line_positions.size()/10-1;j++){
+		if(symbols[i].row+9 <line_positions[1+j*10] || (symbols[i].row+9>line_positions[4+j*10]-3 && symbols[i].row+9<line_positions[4+j*10]+3) ||(symbols[i].row+9>line_positions[6+j*10]+5 && symbols[i].row+9<line_positions[6+j*10]+8)||(symbols[i].row+9>line_positions[10+j*10]-3 && symbols[i].row+9<line_positions[10+j*10]+3) ){
+				symbols[i].pitch='G';
 			}
-	else if((symbols[i].row+9>line_positions[3]-3 && symbols[i].row+9 <=line_positions[3]+3)||(symbols[i].row+9>line_positions[5]+16 && symbols[i].row+9 <line_positions[5]+20)||(symbols[i].row+9>line_positions[6]-9 && symbols[i].row+9 <line_positions[6]-3)||(symbols[i].row+9>line_positions[9]-3 && symbols[i].row+9 <line_positions[9]+3)){
-					symbols[i].pitch='B';
+			else if((symbols[i].row+9>line_positions[1+j*10]-3 && symbols[i].row+9 <=line_positions[1+j*10]+3)||(symbols[i].row+9>line_positions[4+j*10]+5 && symbols[i].row+9 <=line_positions[4+j*10]+8) ||(symbols[i].row+9>line_positions[7+j*10]-3 && symbols[i].row+9 <=line_positions[7+j*10]+3)||(symbols[i].row+9>line_positions[10+j*10]+5 && symbols[i].row+9 <=line_positions[10+j*10]+8)){
+				symbols[i].pitch='F';
+			}
+			else if((symbols[i].row+9>line_positions[1+j*10]+5&& symbols[i].row+9 <=line_positions[1+j*10]+8)||(symbols[i].row+9>line_positions[5+j*10]-3 && symbols[i].row+9 <=line_positions[5+j*10]+3)||(symbols[i].row+9>line_positions[7+j*10]+5 && symbols[i].row+9 <=line_positions[7+j*10]+8)||((symbols[i].row+9>line_positions[10+j*10]+8 && symbols[i].row+9 <=line_positions[10+j*10]+14))){
+				symbols[i].pitch='E';
+			}
+			else if((symbols[i].row+9>line_positions[2+j*10]-3 && symbols[i].row+9 <=line_positions[2+j*10]+3)||(symbols[i].row+9>line_positions[5+j*10]+5&& symbols[i].row+9 <=line_positions[5+j*10]+8)||(symbols[i].row+9>line_positions[8+j*10]-3&& symbols[i].row+9 <=line_positions[8+j*10]+3)){
+					symbols[i].pitch='D';
 				}
-	else if((symbols[i].row+9>line_positions[3]+5 && symbols[i].row+9 <=line_positions[3]+8) || (symbols[i].row+9>line_positions[6]-3 && symbols[i].row+9 <=line_positions[6]+3)||(symbols[i].row+9>line_positions[9]+5 && symbols[i].row+9 <=line_positions[9]+8)){
-						symbols[i].pitch='A';
+			else if((symbols[i].row+9>line_positions[2+j*10]+5 && symbols[i].row+9 <=line_positions[2+j*10]+8)||(symbols[i].row+9>line_positions[5+j*10]+8 && symbols[i].row+9 <=line_positions[5+j*10]+10)||(symbols[i].row+9>line_positions[6+j*10]-14 && symbols[i].row+9 <=line_positions[6+j*10]-8)||(symbols[i].row+9>line_positions[8+j*10]+5 && symbols[i].row+9 <=line_positions[8+j*10]+8)){
+						symbols[i].pitch='C';
 					}
+			else if((symbols[i].row+9>line_positions[3+j*10]-3 && symbols[i].row+9 <=line_positions[3+j*10]+3)||(symbols[i].row+9>line_positions[5+j*10]+16 && symbols[i].row+9 <line_positions[5+j*10]+20)||(symbols[i].row+9>line_positions[6+j*10]-9 && symbols[i].row+9 <line_positions[6+j*10]-3)||(symbols[i].row+9>line_positions[9+j*10]-3 && symbols[i].row+9 <line_positions[9+j*10]+3)){
+							symbols[i].pitch='B';
+						}
+			else if((symbols[i].row+9>line_positions[3+j*10]+5 && symbols[i].row+9 <=line_positions[3+j*10]+8) || (symbols[i].row+9>line_positions[6+j*10]-3 && symbols[i].row+9 <=line_positions[6+j*10]+3)||(symbols[i].row+9>line_positions[9+j*10]+5 && symbols[i].row+9 <=line_positions[9+j*10]+8)){
+								symbols[i].pitch='A';
+							}
+			}
+
+
 }
 }
 
