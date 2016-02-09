@@ -173,7 +173,7 @@ SDoublePlane convolve_general(const SDoublePlane input, const SDoublePlane filte
 
   int imageRows=input.rows();
   int imageCols=input.cols();
-  cout << imageRows << "|" << imageCols;
+  
 
   for(int i=c;i<imageRows-c;i++){
 	  for(int j=c;j<imageCols-c;j++){
