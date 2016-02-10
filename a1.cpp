@@ -170,65 +170,324 @@ SDoublePlane one_d_col_convolve(const SDoublePlane &matrixone,const SDoublePlane
 SDoublePlane convolve_separable(const SDoublePlane &input, const SDoublePlane &row_filter, const SDoublePlane &col_filter)
 {
   SDoublePlane output(input.rows(), input.cols());
-	int filter_center_row=row_filter.rows()/2;
-	  int filter_center_col=col_filter.cols()/2;
-	  SDoublePlane intermediated_array(1,input.cols());
-	       SDoublePlane sub_array(input.rows(),input.cols());
+//Debasis convolution
+	// int filter_center_row=row_filter.rows()/2;
+	//   int filter_center_col=col_filter.cols()/2;
+	//   SDoublePlane intermediated_array(1,input.cols());
+	//        SDoublePlane sub_array(input.rows(),input.cols());
 
-      for(int i=0;i<input.rows();i++)
-      {
-    	  for(int j=0;j<input.cols();j++)
-    	  {
-    		  int a=0;
-    		  for(int k=i-filter_center_row;k<i-filter_center_row+row_filter.rows();k++)
-    		  {
-    			  int b=0;
-    			  for(int l=j-filter_center_col;l<j-filter_center_col+col_filter.cols();l++)
-    			  {
-    				  if(k>=0 and l>=0 and k<input.rows() and l<input.cols())
-    				  {
-    					  sub_array[a][b]=input[k][l];
-    				  }
-    				  b=b+1;
-    			  }
-    			  a=a+1;
-    		  }
-    		  intermediated_array=one_d_row_convolve(sub_array,row_filter);
-    		  output[i][j]=one_d_col_convolve(intermediated_array,col_filter)[0][0];
-    	  }
-      }
-  return output;
+ //      for(int i=0;i<input.rows();i++)
+ //      {
+ //    	  for(int j=0;j<input.cols();j++)
+ //    	  {
+ //    		  int a=0;
+ //    		  for(int k=i-filter_center_row;k<i-filter_center_row+row_filter.rows();k++)
+ //    		  {
+ //    			  int b=0;
+ //    			  for(int l=j-filter_center_col;l<j-filter_center_col+col_filter.cols();l++)
+ //    			  {
+ //    				  if(k>=0 and l>=0 and k<input.rows() and l<input.cols())
+ //    				  {
+ //    					  sub_array[a][b]=input[k][l];
+ //    				  }
+ //    				  b=b+1;
+ //    			  }
+ //    			  a=a+1;
+ //    		  }
+ //    		  intermediated_array=one_d_row_convolve(sub_array,row_filter);
+ //    		  output[i][j]=one_d_col_convolve(intermediated_array,col_filter)[0][0];
+ //    	  }
+ //      }
+ //  return output;
+
+  SDoublePlane output_temp(input.rows(), input.cols());
+
+
+  // Convolution code here
+
+    int c=col_filter.rows()/2;
+
+    int imageRows=input.rows();
+    int imageCols=input.cols();
+
+    for(int i=c;i<imageRows-c;i++){
+  	  for(int j=c;j<imageCols-c;j++){
+  		  double temp=0;
+
+  		  	  for(int v=-c;v<c;v++){
+  		  			temp=temp+row_filter[0][v+c] * input[i][j-v];
+
+  		  		  }
+
+  			output_temp[i][j]=temp;
+  	  }
+
+    }
+
+    for(int i=c;i<imageRows-c;i++){
+      	  for(int j=c;j<imageCols-c;j++){
+      		  double temp=0;
+
+      		  	  for(int u=-c;u<c;u++){
+      		      		 temp=temp+col_filter[u+c][0] * output_temp[i-u][j];
+
+      		      		  }
+
+      			output[i][j]=temp;
+      	  }
+
+        }
+
+
+    return output;
+
 }
 
 // Convolve an image with a separable convolution kernel
-//
-SDoublePlane convolve_general(const SDoublePlane &input, const SDoublePlane &filter)
+
+
+SDoublePlane convolve_general(const SDoublePlane input, const SDoublePlane filter)
 {
   SDoublePlane output(input.rows(), input.cols());
-  int filter_center_row=filter.rows()/2;
-  int filter_center_col=filter.cols()/2;
+ //Debasis convlution
+  // int filter_center_row=filter.rows()/2;
+  // int filter_center_col=filter.cols()/2;
 
-  for(int i=0;i<input.rows();i++)
-  {
-	  for(int j=0;j<input.cols();j++)
-	  {
-		  int sum=0;
-		  for(int k=0;k<filter.rows();k++)
-		  {
-			  for(int l=0;l<filter.cols();l++)
-			  {
-				  if(i-filter_center_row+k>=0 and i-filter_center_row+k<input.rows() and j-filter_center_col+l>=0 and j-filter_center_col+l<input.cols())
-				  {
-						  sum=sum+input[i-filter_center_row+k][j-filter_center_col+l]*filter[k][l];
-				  }
-			  }
-		  }
-		  output[i][j]=sum;
+  // for(int i=0;i<input.rows();i++)
+  // {
+	 //  for(int j=0;j<input.cols();j++)
+	 //  {
+		//   int sum=0;
+		//   for(int k=0;k<filter.rows();k++)
+		//   {
+		// 	  for(int l=0;l<filter.cols();l++)
+		// 	  {
+		// 		  if(i-filter_center_row+k>=0 and i-filter_center_row+k<input.rows() and j-filter_center_col+l>=0 and j-filter_center_col+l<input.cols())
+		// 		  {
+		// 				  sum=sum+input[i-filter_center_row+k][j-filter_center_col+l]*filter[k][l];
+		// 		  }
+		// 	  }
+		//   }
+		//   output[i][j]=sum;
+	 //  }
+  // }
+
+  // Convolution code here
+  int k=filter.rows();
+  int c=k/2;
+
+  int imageRows=input.rows();
+  int imageCols=input.cols();
+
+
+  for(int i=c;i<imageRows-c;i++){
+	  for(int j=c;j<imageCols-c;j++){
+		  double temp=0;
+		  for(int u=-c;u<c;u++){
+
+		  			  for(int v=-c;v<c;v++){
+
+		  				  temp=temp+filter[u+c][v+c] * input[i+u][j+v];
+
+		  			  }
+
+		  		  }
+
+		  output[i][j]=temp;
 	  }
+  
   }
 
-
   return output;
+}
+/*
+ * This method binarize the image to be used for hamming distance computation
+ */
+SDoublePlane binarize_image(const SDoublePlane image){
+	SDoublePlane output_image(image.rows(),image.cols());
+	for(int i=0;i<image.rows();i++){
+		for(int j=0;j<image.cols();j++){
+			if(image[i][j]>70){
+				output_image[i][j]=0;
+			}
+			else{
+				output_image[i][j]=1;
+			}
+		}
+	}
+	return output_image;
+}
+/*
+ * This is a helper method to display the pixel values of an image.
+ */
+void display_pixel_values(const SDoublePlane image){
+	int min=9999;
+	for(int i=0;i<image.rows();i++){
+		for(int j=0;j<image.cols();j++){
+			cout<< image[i][j]<<" ";
+		}
+		cout<< endl;
+	}
+}
+
+
+void block_image_area(SDoublePlane &hamming_matrix,int i,int j,int template_width,int template_height){
+	for(int m=i;m<i+template_height;m++){
+		for(int n=j;n<j+template_width;n++){
+			if(m!=i && n!=j){
+				hamming_matrix[m][n]=-1;
+			}
+		}
+	}
+}
+/*
+ * This method detects the symbols.
+ */
+void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,vector<DetectedSymbol> &symbols,Type type){
+
+	SDoublePlane hamming_matrix(input.rows(),input.cols());
+
+// Binarize the input image and the template
+	SDoublePlane binarized_input_image=binarize_image(input);
+	SDoublePlane binarized_template_image=binarize_image(note_template);
+
+// Hamming Distance Computation
+	double temp;
+	int max=-1;
+	int c=note_template.cols()/2;
+	int d=note_template.rows()/2;
+	for(int i=d;i<binarized_input_image.rows()-d;i++){
+		for(int j=c;j<binarized_input_image.cols()-c;j++){
+			temp=0;
+			for(int k=0;k<binarized_template_image.rows();k++){
+				for(int l=0;l<binarized_template_image.cols();l++){
+					temp=temp+binarized_input_image[i+k-d][j+l-c] * binarized_template_image[k][l]+(1-binarized_input_image[i+k-d][j+l-c]) * (1-binarized_template_image[k][l]);
+				}
+			}
+			hamming_matrix[i][j]=temp;
+			if(temp>max)
+				max=temp;
+		}
+	}
+	for(int i=0;i<hamming_matrix.rows();i++){
+		for(int j=0;j<hamming_matrix.cols();j++){
+			if(hamming_matrix[i][j] >0 && hamming_matrix[i][j]>=0.91*max){
+					  DetectedSymbol s;
+				      s.row =i-binarized_template_image.rows()/2-4;
+				      s.col =j-binarized_template_image.cols()/2-2;
+				      s.width = binarized_template_image.cols()+4;
+				      s.height = binarized_template_image.rows()+6;
+				      s.type = type;
+				      symbols.push_back(s);
+				      block_image_area(hamming_matrix,s.row,s.col,s.width,s.height);
+			}
+		}
+	}
+
+
+
+
+}
+/*
+ * This method detect the co-ordinates of the staff lines in the image.
+ */
+vector<int> detect_lines(const SDoublePlane input) {
+	SDoublePlane output_lines(input.rows(), input.cols());
+	SDoublePlane horizontal_line_kernel(3, 3);
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			if (i == 0 || i == 2)
+				horizontal_line_kernel[i][j] = -1;
+			else
+				horizontal_line_kernel[i][j] = 2;
+		}
+	}
+		for (int i = 1; i < input.rows() - 1; i++) {
+			for (int j = 1; j < input.cols() - 1; j++) {
+				int temp = 0;
+				for (int u = 0; u < 3; u++) {
+					for (int v = 0; v < 3; v++) {
+						temp = temp
+								+ input[i + u - 1][j + v - 1]
+										* horizontal_line_kernel[u][v];
+					}
+				}
+				if (temp<-460)
+					output_lines[i][j] = 0;
+				else
+					output_lines[i][j] = 255;
+
+			}
+		}
+
+
+//	return output_lines;
+	vector<int> indices;
+	  for(int i=0;i<output_lines.rows();i++){
+		  int count_black=0;
+		  for(int j=0;j<output_lines.cols();j++){
+			  if(output_lines[i][j]>=0 && output_lines[i][j]<=33){
+				  count_black++;
+			  }
+		  }
+		  if(count_black>0.20*output_lines.cols()){
+//
+			  indices.push_back(i);
+
+			  }
+//		  else{
+//			  for(int j=0;j<output_lines.cols();j++){
+//			  			  output_lines[i][j]=255;
+//			  }
+//		  }
+
+	  }
+//	 return output_lines;
+return indices;
+
+}
+
+/*
+ * This method computes the pitch of the detected notes.
+ */
+void compute_pitch(vector<int> line_positions,vector<DetectedSymbol> &symbols){
+
+for(int i=0;i<symbols.size();i++){
+	for(int j=0;j<=(line_positions.size()/10-1);j++){
+
+		if(symbols[i].row+9 <line_positions[1+j*10] || (symbols[i].row+9>line_positions[4+j*10]-3 && symbols[i].row+9<line_positions[4+j*10]+3) ||(symbols[i].row+9>line_positions[6+j*10]+5 && symbols[i].row+9<line_positions[6+j*10]+8)||(symbols[i].row+9>line_positions[10+j*10]-3 && symbols[i].row+9<line_positions[10+j*10]+3) ){
+				symbols[i].pitch='G';
+				break;
+			}
+			else if((symbols[i].row+9>line_positions[1+j*10]-3 && symbols[i].row+9 <=line_positions[1+j*10]+3)||(symbols[i].row+9>line_positions[4+j*10]+5 && symbols[i].row+9 <=line_positions[4+j*10]+8) ||(symbols[i].row+9>line_positions[7+j*10]-3 && symbols[i].row+9 <=line_positions[7+j*10]+3)||(symbols[i].row+9>line_positions[10+j*10]+5 && symbols[i].row+9 <=line_positions[10+j*10]+8)){
+				symbols[i].pitch='F';
+				break;
+			}
+			else if((symbols[i].row+9>line_positions[1+j*10]+5&& symbols[i].row+9 <=line_positions[1+j*10]+8)||(symbols[i].row+9>line_positions[5+j*10]-3 && symbols[i].row+9 <=line_positions[5+j*10]+3)||(symbols[i].row+9>line_positions[7+j*10]+5 && symbols[i].row+9 <=line_positions[7+j*10]+8)||((symbols[i].row+9>line_positions[10+j*10]+8 && symbols[i].row+9 <=line_positions[10+j*10]+14))){
+				symbols[i].pitch='E';
+				break;
+			}
+			else if((symbols[i].row+9>line_positions[2+j*10]-3 && symbols[i].row+9 <=line_positions[2+j*10]+3)||(symbols[i].row+9>line_positions[5+j*10]+5&& symbols[i].row+9 <=line_positions[5+j*10]+8)||(symbols[i].row+9>line_positions[8+j*10]-3&& symbols[i].row+9 <=line_positions[8+j*10]+3)){
+					symbols[i].pitch='D';
+					break;
+				}
+			else if((symbols[i].row+9>line_positions[2+j*10]+5 && symbols[i].row+9 <=line_positions[2+j*10]+8)||(symbols[i].row+9>line_positions[5+j*10]+8 && symbols[i].row+9 <=line_positions[5+j*10]+10)||(symbols[i].row+9>line_positions[6+j*10]-14 && symbols[i].row+9 <=line_positions[6+j*10]-8)||(symbols[i].row+9>line_positions[8+j*10]+5 && symbols[i].row+9 <=line_positions[8+j*10]+8)){
+						symbols[i].pitch='C';
+						break;
+					}
+			else if((symbols[i].row+9>line_positions[3+j*10]-3 && symbols[i].row+9 <=line_positions[3+j*10]+3)||(symbols[i].row+9>line_positions[5+j*10]+16 && symbols[i].row+9 <line_positions[5+j*10]+20)||(symbols[i].row+9>line_positions[6+j*10]-9 && symbols[i].row+9 <line_positions[6+j*10]-3)||(symbols[i].row+9>line_positions[9+j*10]-3 && symbols[i].row+9 <line_positions[9+j*10]+3)){
+							symbols[i].pitch='B';
+							break;
+						}
+			else if((symbols[i].row+9>line_positions[3+j*10]+5 && symbols[i].row+9 <=line_positions[3+j*10]+8) || (symbols[i].row+9>line_positions[6+j*10]-3 && symbols[i].row+9 <=line_positions[6+j*10]+3)||(symbols[i].row+9>line_positions[9+j*10]+5 && symbols[i].row+9 <=line_positions[9+j*10]+8)){
+								symbols[i].pitch='A';
+								break;
+							}
+
+			}
+
+
+}
 }
 
 SDoublePlane gaussianBlurkernel(float sigma)
@@ -443,18 +702,18 @@ SDoublePlane closet_edge_pixel(const SDoublePlane &input_binary_image)
 
 		  				  	  }
 		  			int mic = colm[0];
-		  			    for(int i=0;i<colm.size();i++)
+		  			    for(int n=0;n<colm.size();n++)
 		  			    {
-		  			        if(colm[i]<mic)
-		  			        mic=colm[i];
+		  			        if(colm[n]<mic)
+		  			        mic=colm[n];
 		  			    }
 		  			  row[k]=mic;
 		  		  }
 		  		int mic = row[0];
-		  				  			    for(int i=0;i<row.size();i++)
+		  				  			    for(int n=0;n<row.size();n++)
 		  				  			    {
-		  				  			        if(row[i]<mic)
-		  				  			        mic=row[i];
+		  				  			        if(row[n]<mic)
+		  				  			        mic=row[n];
 		  				  			    }
 		  		output[i][j]=mic;
 
@@ -573,79 +832,7 @@ int main(int argc, char *argv[])
 
   string input_filename(argv[1]);
   SDoublePlane input_image= SImageIO::read_png_file(input_filename.c_str());
-  // test step 2 by applying mean filters to the input image
-  SDoublePlane mean_filter(3,3);
-  for(int i=0; i<3; i++)
-    for(int j=0; j<3; j++)
-      mean_filter[i][j] = 1/9.0;
 
-//-----------------------------------------------------------------------------------------------------
-/*
- * Convolution Functionality below by debasis dwivedy
- *
- */
-
-  SDoublePlane output_image(input_image.rows(),input_image.cols());
-  SDoublePlane gen_convolve_filter(3,3);
-  SDoublePlane sep_convolve_row_filter(3,1);
-  SDoublePlane sep_convolve_col_filter(1,3);
-  /*
-   * General Convolution
-   *
-   */
-  int kernel[3][3]={
-  		  {-1, -2, -1,},
-  		  {0, 0, 0,},
-  		  {1, 2, 1}
-    };
-  int new_kernel[3][3]={0};
-    for (int i=0;i<3;i++)
-  		{
-  	  for(int j=0;j<3;j++)
-  	  {
-  		  new_kernel[2-i][2-j]=kernel[i][j];
-  	  }
-  		}
-  for(int i=0; i<3; i++)
-      for(int j=0; j<3; j++)
-    	  gen_convolve_filter[i][j] = new_kernel[i][j];
-  //output_image = convolve_general(input_image, gen_convolve_filter);
-
-/*
- * Separable Convolution
- *
- */
-
-  int row_filter[3][1]={
-    		  {1,},
-    		  {2,},
-    		  {1}
-      };
-  int col_filter[1][3]={
-      		  {1, 2, 1}
-        };
-  for(int i=0; i<sep_convolve_row_filter.rows(); i++)
-  {
-	  for(int j=0; j<sep_convolve_row_filter.cols(); j++)
-	    {
-      	  sep_convolve_row_filter[i][j] = row_filter[i][j];
-	    }
-  }
-
-  for(int i=0; i<sep_convolve_col_filter.rows(); i++)
-  {
-  for(int j=0; j<sep_convolve_col_filter.cols(); j++)
-  {
-      	  sep_convolve_col_filter[i][j] = col_filter[i][j];
-  }
-  }
-
-
-/*
- * End of Convolution
- *
- */
-//----------------------------------------------------------------------------------------------------------
 /*
  *
  * Sobel gradient and edge detector
@@ -653,20 +840,21 @@ int main(int argc, char *argv[])
  * To get the right gradient value divide sobel_x_filter and sobel_y_filter by 1/8
  */
 
-  string template1_filename(argv[2]);
-      SDoublePlane template1_image= SImageIO::read_png_file(template1_filename.c_str());
-      string template2_filename(argv[3]);
-          SDoublePlane template2_image= SImageIO::read_png_file(template2_filename.c_str());
-          string template3_filename(argv[4]);
-              SDoublePlane template3_image= SImageIO::read_png_file(template3_filename.c_str());
-      SDoublePlane edge_input_image(input_image.rows(),input_image.cols());
-        SDoublePlane edge_template_image1(template1_image.rows(),template1_image.cols());
-        SDoublePlane edge_template_image2(template2_image.rows(),template2_image.cols());
-        SDoublePlane edge_template_image3(template3_image.rows(),template3_image.cols());
-        edge_input_image=output_edge_detector(input_image);
-        edge_template_image1=output_edge_detector(template1_image);
-        edge_template_image2=output_edge_detector(template2_image);
-        edge_template_image3=output_edge_detector(template3_image);
+  string template1_filename = "template1.png";
+  SDoublePlane template1_image= SImageIO::read_png_file(template1_filename.c_str());
+  string template2_filename = "template2.png";
+  SDoublePlane template2_image= SImageIO::read_png_file(template2_filename.c_str());
+  string template3_filename= "template3.png";
+  SDoublePlane template3_image= SImageIO::read_png_file(template3_filename.c_str());
+
+  SDoublePlane edge_input_image(input_image.rows(),input_image.cols());
+	SDoublePlane edge_template_image1(template1_image.rows(),template1_image.cols());
+	SDoublePlane edge_template_image2(template2_image.rows(),template2_image.cols());
+	SDoublePlane edge_template_image3(template3_image.rows(),template3_image.cols());
+	edge_input_image=output_edge_detector(input_image);
+	edge_template_image1=output_edge_detector(template1_image);
+	edge_template_image2=output_edge_detector(template2_image);
+	edge_template_image3=output_edge_detector(template3_image);
 
 
 /*
@@ -674,21 +862,49 @@ int main(int argc, char *argv[])
  * End of Sobel gradient and edge detector
  */
 //----------------------------------------------------------------------------------------------------------------
-  // randomly generate some detected symbols -- you'll want to replace this
-  //  with your symbol detection code obviously!
+
+  vector<DetectedSymbol> symbol;
+  write_detection_image("edge_template_image1.png", symbol, edge_template_image1);
+  write_detection_image("edge_template_image2.png", symbol, edge_template_image2);
+  write_detection_image("edge_template_image3.png", symbol, edge_template_image3);
+  write_detection_image("edges.png", symbol, edge_input_image);
+
+  // test step 2 by applying mean filters to the input image
+  int filtersize=10;
+  SDoublePlane mean_filter(filtersize,filtersize);
+  for(int i=0; i<filtersize; i++)
+    for(int j=0; j<filtersize; j++)
+      mean_filter[i][j] = 1/((double) filtersize*filtersize);
+  SDoublePlane output_1 = convolve_general(input_image, mean_filter);
+//
+  // Separable filter
+  SDoublePlane row_filter(1,filtersize);
+  for(int i=0; i<filtersize; i++)
+	  row_filter[0][i] = 1/((double) filtersize);
+  SDoublePlane col_filter(filtersize,1);
+  for(int j=0; j<filtersize; j++)
+  	  col_filter[j][0] = 1/((double) filtersize);
+  SDoublePlane output_2 = convolve_separable(input_image, row_filter,col_filter);
+
+//
+//  // randomly generate some detected symbols -- you'll want to replace this
+//  //  with your symbol detection code obviously!
   vector<DetectedSymbol> symbols;
 
-      vector<DetectedSymbol> symbol;
-      write_detection_image("edge_template_image1.png", symbol, edge_template_image1);
-      write_detection_image("edge_template_image2.png", symbol, edge_template_image2);
-      write_detection_image("edge_template_image3.png", symbol, edge_template_image3);
-      write_detection_image("edges.png", symbol, edge_input_image);
+  detect_symbols(input_image,template1_image,symbols,NOTEHEAD);
+  detect_symbols(input_image,template2_image,symbols,QUARTERREST);
+  detect_symbols(input_image,template3_image,symbols,EIGHTHREST);
 
-//Code for cross correlation
+  vector<int> line_positions=detect_lines(input_image);
+  compute_pitch(line_positions,symbols);
 
-  FIT(edge_input_image,edge_template_image1,symbols,NOTEHEAD);
 
- FIT(edge_input_image,template2_image,symbols,QUARTERREST);
-  FIT(edge_input_image,edge_template_image3,symbols,EIGHTHREST);
-  write_detection_image("detected5.png", symbols, input_image);
+
+
+
+//  write_detection_txt("detected.txt", symbols);
+  write_detection_image("convolution_general.png", symbols, output_1);
+  write_detection_image("convolution_seperable.png", symbols, output_2);
+  write_detection_image("detected.png", symbols, input_image);
+
 }
