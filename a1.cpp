@@ -120,11 +120,13 @@ SDoublePlane convolve_separable(const SDoublePlane &input, const SDoublePlane &r
 
 
   // Convolution code here
+
   	int k=col_filter.rows();
-    int c=col_filter.rows()/2;
+   int c=col_filter.rows()/2;
 
     int imageRows=input.rows();
     int imageCols=input.cols();
+
 
     //using row filter
     for(int i=c;i<imageRows-c;i++){
@@ -133,13 +135,12 @@ SDoublePlane convolve_separable(const SDoublePlane &input, const SDoublePlane &r
 
   		  	  for(int v=0;v<k;v++){
   		  			temp=temp+row_filter[0][k-1-v] * input[i-c][j+k-1-v-c];
-
   		  		  }
 
   			output_temp[i][j]=temp;
   	  }
-
     }
+
     //using column filter
     for(int i=c;i<imageRows-c;i++){
       	  for(int j=c;j<imageCols-c;j++){
@@ -147,6 +148,8 @@ SDoublePlane convolve_separable(const SDoublePlane &input, const SDoublePlane &r
 
       		  	  for(int u=0;u<k;u++){
       		      		 temp=temp+col_filter[k-1-u][0] * output_temp[i+k-1-u-c][j-c];
+
+
 
       		      		  }
 
@@ -188,6 +191,7 @@ SDoublePlane convolve_general(const SDoublePlane input, const SDoublePlane filte
 
   		  	}	
 
+
 		  output[i][j]=temp;
 	  }
   
@@ -201,7 +205,9 @@ SDoublePlane binarize_image(const SDoublePlane image){
 	SDoublePlane output_image(image.rows(),image.cols());
 	for(int i=0;i<image.rows();i++){
 		for(int j=0;j<image.cols();j++){
+
 			if(image[i][j]<=150){
+
 				output_image[i][j]=0;
 			}
 			else{
@@ -217,13 +223,12 @@ SDoublePlane binarize_image(const SDoublePlane image){
 void display_pixel_values(const SDoublePlane image){
 	int min=9999;
 	for(int i=0;i<image.rows();i++){
-		cout<< "row: " <<i <<endl;
 		for(int j=0;j<image.cols();j++){
 			cout<< image[i][j]<<" ";
 		}
-		cout<< endl <<endl;
+		cout<< endl;
 	}
-	cout<<"display finished"<<endl;
+
 }
 
 
@@ -253,6 +258,7 @@ void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,ve
 	int c=note_template.cols()/2;
 	int d=note_template.rows()/2;
 	int m,n;
+
 	for(int i=d;i<binarized_input_image.rows()-d;i++){
 		for(int j=c;j<binarized_input_image.cols()-c;j++){
 			temp=0;
@@ -304,7 +310,9 @@ vector<int> detect_lines(const SDoublePlane input) {
 				horizontal_line_kernel[i][j] = 2;
 		}
 	}
+
 		int m,n;
+
 		for (int i = 1; i < input.rows() - 1; i++) {
 			for (int j = 1; j < input.cols() - 1; j++) {
 				int temp = 0;
@@ -324,8 +332,6 @@ vector<int> detect_lines(const SDoublePlane input) {
 			}
 		}
 
-
-
 	vector<int> indices;
 	  for(int i=0;i<output_lines.rows();i++){
 		  int count_black=0;
@@ -335,15 +341,10 @@ vector<int> detect_lines(const SDoublePlane input) {
 			  }
 		  }
 		  if(count_black>0.20*output_lines.cols()){
-
 			  indices.push_back(i);
-
 			  }
-
-
 	  }
 return indices;
-
 }
 
 /*
@@ -353,6 +354,7 @@ void compute_pitch(vector<int> line_positions,vector<DetectedSymbol> &symbols){
 
 for(int i=0;i<symbols.size();i++){
 	for(int j=0;j<=(line_positions.size()/10-1);j++){
+
 		if(symbols[i].type==NOTEHEAD){
 			if(symbols[i].row+5 <line_positions[1+j*10] || (symbols[i].row+5>line_positions[4+j*10]-3 && symbols[i].row+5<line_positions[4+j*10]+3) ||(symbols[i].row+5>line_positions[6+j*10]+5 && symbols[i].row+5<line_positions[6+j*10]+8)||(symbols[i].row+5>line_positions[10+j*10]-3 && symbols[i].row+5<line_positions[10+j*10]+3) ){
 							symbols[i].pitch='G';
@@ -386,6 +388,7 @@ for(int i=0;i<symbols.size();i++){
 			}
 
 	}
+
 }
 }
 
@@ -556,6 +559,7 @@ int main(int argc, char *argv[])
 
   string input_filename(argv[1]);
   SDoublePlane input_image= SImageIO::read_png_file(input_filename.c_str());
+
 
   printf("read input file\n");
 
