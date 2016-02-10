@@ -120,18 +120,19 @@ SDoublePlane convolve_separable(const SDoublePlane &input, const SDoublePlane &r
 
 
   // Convolution code here
-
+  	int k=col_filter.rows();
     int c=col_filter.rows()/2;
 
     int imageRows=input.rows();
     int imageCols=input.cols();
 
+    //using row filter
     for(int i=c;i<imageRows-c;i++){
   	  for(int j=c;j<imageCols-c;j++){
   		  double temp=0;
 
-  		  	  for(int v=-c;v<c;v++){
-  		  			temp=temp+row_filter[0][v+c] * input[i][j-v];
+  		  	  for(int v=0;v<k;v++){
+  		  			temp=temp+row_filter[0][k-1-v] * input[i-c][j+k-1-v-c];
 
   		  		  }
 
@@ -139,13 +140,13 @@ SDoublePlane convolve_separable(const SDoublePlane &input, const SDoublePlane &r
   	  }
 
     }
-
+    //using column filter
     for(int i=c;i<imageRows-c;i++){
       	  for(int j=c;j<imageCols-c;j++){
       		  double temp=0;
 
-      		  	  for(int u=-c;u<c;u++){
-      		      		 temp=temp+col_filter[u+c][0] * output_temp[i-u][j];
+      		  	  for(int u=0;u<k;u++){
+      		      		 temp=temp+col_filter[k-1-u][0] * output_temp[i+k-1-u-c][j-c];
 
       		      		  }
 
@@ -172,13 +173,16 @@ SDoublePlane convolve_general(const SDoublePlane input, const SDoublePlane filte
   int imageRows=input.rows();
   int imageCols=input.cols();
 
+  int m,n;
   for(int i=c;i<imageRows-c;i++){
 	  for(int j=c;j<imageCols-c;j++){
 		  double temp=0;
-		  for(int u=-c;u<c;u++){
 
-  			  for(int v=-c;v<c;v++){
-  				  temp=temp+filter[u+c][v+c] * input[i+u][j+v];
+		  for(int u=0;u<k;u++){
+			  	  	  m=k-1-u;
+		  			  for(int v=0;v<k;v++){
+		  				n=k-1-v;
+		  				temp=temp+filter[m][n] * input[i+m-c][j+n-c];
 
   			  }	
 
@@ -197,7 +201,7 @@ SDoublePlane binarize_image(const SDoublePlane image){
 	SDoublePlane output_image(image.rows(),image.cols());
 	for(int i=0;i<image.rows();i++){
 		for(int j=0;j<image.cols();j++){
-			if(image[i][j]>70){
+			if(image[i][j]<=150){
 				output_image[i][j]=0;
 			}
 			else{
@@ -248,12 +252,15 @@ void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,ve
 	int max=-1;
 	int c=note_template.cols()/2;
 	int d=note_template.rows()/2;
+	int m,n;
 	for(int i=d;i<binarized_input_image.rows()-d;i++){
 		for(int j=c;j<binarized_input_image.cols()-c;j++){
 			temp=0;
 			for(int k=0;k<binarized_template_image.rows();k++){
+				m=binarized_template_image.rows()-1-k;
 				for(int l=0;l<binarized_template_image.cols();l++){
-					temp=temp+binarized_input_image[i+k-d][j+l-c] * binarized_template_image[k][l]+(1-binarized_input_image[i+k-d][j+l-c]) * (1-binarized_template_image[k][l]);
+					n=binarized_template_image.cols()-1-l;
+					temp=temp+binarized_input_image[i+m-d][j+n-c] * binarized_template_image[m][n]+(1-binarized_input_image[i+m-d][j+n-c]) * (1-binarized_template_image[m][n]);
 				}
 			}
 			hamming_matrix[i][j]=temp;
@@ -265,10 +272,10 @@ void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,ve
 		for(int j=0;j<hamming_matrix.cols();j++){
 			if(hamming_matrix[i][j] >0 && hamming_matrix[i][j]>=0.91*max){
 					  DetectedSymbol s;
-				      s.row =i-binarized_template_image.rows()/2-4;
-				      s.col =j-binarized_template_image.cols()/2-2;
-				      s.width = binarized_template_image.cols()+4;
-				      s.height = binarized_template_image.rows()+6;
+				      s.row =i-binarized_template_image.rows()/2;
+				      s.col =j-binarized_template_image.cols()/2;
+				      s.width = binarized_template_image.cols();
+				      s.height = binarized_template_image.rows();
 				      s.type = type;
 				      symbols.push_back(s);
 				      block_image_area(hamming_matrix,s.row,s.col,s.width,s.height);
@@ -281,7 +288,10 @@ void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,ve
 
 }
 /*
- * This method detect the co-ordinates of the staff lines in the image.
+ * This method detect the co-ordinates of the staff lines in the image using a 3X3 kernel
+ * |-1,-1,-1|
+ * | 2, 2, 2|
+ * |-1,-1,-1|
  */
 vector<int> detect_lines(const SDoublePlane input) {
 	SDoublePlane output_lines(input.rows(), input.cols());
@@ -294,14 +304,17 @@ vector<int> detect_lines(const SDoublePlane input) {
 				horizontal_line_kernel[i][j] = 2;
 		}
 	}
+		int m,n;
 		for (int i = 1; i < input.rows() - 1; i++) {
 			for (int j = 1; j < input.cols() - 1; j++) {
 				int temp = 0;
 				for (int u = 0; u < 3; u++) {
+					m=2-u;
 					for (int v = 0; v < 3; v++) {
+						n=2-v;
 						temp = temp
-								+ input[i + u - 1][j + v - 1]
-										* horizontal_line_kernel[u][v];
+								+ input[i + m - 1][j + n - 1]
+										* horizontal_line_kernel[m][n];
 					}
 				}
 				if (temp<-460)
@@ -312,28 +325,23 @@ vector<int> detect_lines(const SDoublePlane input) {
 		}
 
 
-//	return output_lines;
+
 	vector<int> indices;
 	  for(int i=0;i<output_lines.rows();i++){
 		  int count_black=0;
 		  for(int j=0;j<output_lines.cols();j++){
-			  if(output_lines[i][j]>=0 && output_lines[i][j]<=33){
+			  if(output_lines[i][j]==0){
 				  count_black++;
 			  }
 		  }
 		  if(count_black>0.20*output_lines.cols()){
-//
+
 			  indices.push_back(i);
 
 			  }
-//		  else{
-//			  for(int j=0;j<output_lines.cols();j++){
-//			  			  output_lines[i][j]=255;
-//			  }
-//		  }
+
 
 	  }
-//	 return output_lines;
 return indices;
 
 }
@@ -342,32 +350,42 @@ return indices;
  * This method computes the pitch of the detected notes.
  */
 void compute_pitch(vector<int> line_positions,vector<DetectedSymbol> &symbols){
+
 for(int i=0;i<symbols.size();i++){
-	for(int j=0;j<line_positions.size()/10-1;j++){
-		if(symbols[i].row+9 <line_positions[1+j*10] || (symbols[i].row+9>line_positions[4+j*10]-3 && symbols[i].row+9<line_positions[4+j*10]+3) ||(symbols[i].row+9>line_positions[6+j*10]+5 && symbols[i].row+9<line_positions[6+j*10]+8)||(symbols[i].row+9>line_positions[10+j*10]-3 && symbols[i].row+9<line_positions[10+j*10]+3) ){
-				symbols[i].pitch='G';
-			}
-			else if((symbols[i].row+9>line_positions[1+j*10]-3 && symbols[i].row+9 <=line_positions[1+j*10]+3)||(symbols[i].row+9>line_positions[4+j*10]+5 && symbols[i].row+9 <=line_positions[4+j*10]+8) ||(symbols[i].row+9>line_positions[7+j*10]-3 && symbols[i].row+9 <=line_positions[7+j*10]+3)||(symbols[i].row+9>line_positions[10+j*10]+5 && symbols[i].row+9 <=line_positions[10+j*10]+8)){
-				symbols[i].pitch='F';
-			}
-			else if((symbols[i].row+9>line_positions[1+j*10]+5&& symbols[i].row+9 <=line_positions[1+j*10]+8)||(symbols[i].row+9>line_positions[5+j*10]-3 && symbols[i].row+9 <=line_positions[5+j*10]+3)||(symbols[i].row+9>line_positions[7+j*10]+5 && symbols[i].row+9 <=line_positions[7+j*10]+8)||((symbols[i].row+9>line_positions[10+j*10]+8 && symbols[i].row+9 <=line_positions[10+j*10]+14))){
-				symbols[i].pitch='E';
-			}
-			else if((symbols[i].row+9>line_positions[2+j*10]-3 && symbols[i].row+9 <=line_positions[2+j*10]+3)||(symbols[i].row+9>line_positions[5+j*10]+5&& symbols[i].row+9 <=line_positions[5+j*10]+8)||(symbols[i].row+9>line_positions[8+j*10]-3&& symbols[i].row+9 <=line_positions[8+j*10]+3)){
-					symbols[i].pitch='D';
-				}
-			else if((symbols[i].row+9>line_positions[2+j*10]+5 && symbols[i].row+9 <=line_positions[2+j*10]+8)||(symbols[i].row+9>line_positions[5+j*10]+8 && symbols[i].row+9 <=line_positions[5+j*10]+10)||(symbols[i].row+9>line_positions[6+j*10]-14 && symbols[i].row+9 <=line_positions[6+j*10]-8)||(symbols[i].row+9>line_positions[8+j*10]+5 && symbols[i].row+9 <=line_positions[8+j*10]+8)){
-						symbols[i].pitch='C';
-					}
-			else if((symbols[i].row+9>line_positions[3+j*10]-3 && symbols[i].row+9 <=line_positions[3+j*10]+3)||(symbols[i].row+9>line_positions[5+j*10]+16 && symbols[i].row+9 <line_positions[5+j*10]+20)||(symbols[i].row+9>line_positions[6+j*10]-9 && symbols[i].row+9 <line_positions[6+j*10]-3)||(symbols[i].row+9>line_positions[9+j*10]-3 && symbols[i].row+9 <line_positions[9+j*10]+3)){
-							symbols[i].pitch='B';
+	for(int j=0;j<=(line_positions.size()/10-1);j++){
+		if(symbols[i].type==NOTEHEAD){
+			if(symbols[i].row+5 <line_positions[1+j*10] || (symbols[i].row+5>line_positions[4+j*10]-3 && symbols[i].row+5<line_positions[4+j*10]+3) ||(symbols[i].row+5>line_positions[6+j*10]+5 && symbols[i].row+5<line_positions[6+j*10]+8)||(symbols[i].row+5>line_positions[10+j*10]-3 && symbols[i].row+5<line_positions[10+j*10]+3) ){
+							symbols[i].pitch='G';
+							break;
 						}
-			else if((symbols[i].row+9>line_positions[3+j*10]+5 && symbols[i].row+9 <=line_positions[3+j*10]+8) || (symbols[i].row+9>line_positions[6+j*10]-3 && symbols[i].row+9 <=line_positions[6+j*10]+3)||(symbols[i].row+9>line_positions[9+j*10]+5 && symbols[i].row+9 <=line_positions[9+j*10]+8)){
-								symbols[i].pitch='A';
+						else if((symbols[i].row+5>line_positions[1+j*10]-3 && symbols[i].row+5 <=line_positions[1+j*10]+3)||(symbols[i].row+5>line_positions[4+j*10]+5 && symbols[i].row+5 <=line_positions[4+j*10]+8) ||(symbols[i].row+5>line_positions[7+j*10]-3 && symbols[i].row+5 <=line_positions[7+j*10]+3)||(symbols[i].row+5>line_positions[10+j*10]+5 && symbols[i].row+5 <=line_positions[10+j*10]+8)){
+							symbols[i].pitch='F';
+							break;
+						}
+						else if((symbols[i].row+5>line_positions[1+j*10]+5&& symbols[i].row+5 <=line_positions[1+j*10]+8)||(symbols[i].row+5>line_positions[5+j*10]-3 && symbols[i].row+5 <=line_positions[5+j*10]+3)||(symbols[i].row+5>line_positions[7+j*10]+5 && symbols[i].row+5 <=line_positions[7+j*10]+8)||((symbols[i].row+5>line_positions[10+j*10]+8 && symbols[i].row+5 <=line_positions[10+j*10]+14))){
+							symbols[i].pitch='E';
+							break;
+						}
+						else if((symbols[i].row+5>line_positions[2+j*10]-3 && symbols[i].row+5 <=line_positions[2+j*10]+3)||(symbols[i].row+5>line_positions[5+j*10]+5&& symbols[i].row+5 <=line_positions[5+j*10]+8)||(symbols[i].row+5>line_positions[8+j*10]-3&& symbols[i].row+5 <=line_positions[8+j*10]+3)){
+								symbols[i].pitch='D';
+								break;
 							}
+						else if((symbols[i].row+5>line_positions[2+j*10]+5 && symbols[i].row+5 <=line_positions[2+j*10]+8)||(symbols[i].row+5>line_positions[5+j*10]+8 && symbols[i].row+5 <=line_positions[5+j*10]+10)||(symbols[i].row+5>line_positions[6+j*10]-14 && symbols[i].row+5 <=line_positions[6+j*10]-8)||(symbols[i].row+5>line_positions[8+j*10]+5 && symbols[i].row+5 <=line_positions[8+j*10]+8)){
+									symbols[i].pitch='C';
+									break;
+								}
+						else if((symbols[i].row+5>line_positions[3+j*10]-3 && symbols[i].row+5 <=line_positions[3+j*10]+3)||(symbols[i].row+5>line_positions[5+j*10]+16 && symbols[i].row+5 <line_positions[5+j*10]+20)||(symbols[i].row+5>line_positions[6+j*10]-9 && symbols[i].row+5 <line_positions[6+j*10]-3)||(symbols[i].row+5>line_positions[9+j*10]-3 && symbols[i].row+5 <line_positions[9+j*10]+3)){
+										symbols[i].pitch='B';
+										break;
+									}
+						else if((symbols[i].row+5>line_positions[3+j*10]+5 && symbols[i].row+5 <=line_positions[3+j*10]+8) || (symbols[i].row+5>line_positions[6+j*10]-3 && symbols[i].row+5 <=line_positions[6+j*10]+3)||(symbols[i].row+5>line_positions[9+j*10]+5 && symbols[i].row+5 <=line_positions[9+j*10]+8)){
+											symbols[i].pitch='A';
+											break;
+										}
+
 			}
 
-
+	}
 }
 }
 
@@ -542,7 +560,7 @@ int main(int argc, char *argv[])
   printf("read input file\n");
 
   // test step 2 by applying mean filters to the input image
-  int filtersize=2;
+  int filtersize=3;
   SDoublePlane mean_filter(filtersize,filtersize);
   for(int i=0; i<filtersize; i++)
     for(int j=0; j<filtersize; j++)
@@ -601,15 +619,13 @@ int main(int argc, char *argv[])
   	}
   }
 
-  detect_symbols(input_image,template1_image,symbols,NOTEHEAD);
-  detect_symbols(input_image,template2_image,symbols,QUARTERREST);
-	detect_symbols(input_image,template3_image,symbols,EIGHTHREST);
+  detect_symbols(output_2,template1_image,symbols,NOTEHEAD);
+  detect_symbols(output_2,template2_image,symbols,QUARTERREST);
+  detect_symbols(output_2,template3_image,symbols,EIGHTHREST);
+
 
   vector<int> line_positions=detect_lines(input_image);
   compute_pitch(line_positions,symbols);
-
-
-
 
 
 
@@ -617,6 +633,7 @@ int main(int argc, char *argv[])
   write_detection_image("convolution_general.png", symbols, output_1);
   write_detection_image("convolution_seperable.png", symbols, output_2);
   write_detection_image("detected.png", symbols, input_image);
+
 
 
 }
