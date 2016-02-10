@@ -87,21 +87,19 @@ void  write_detection_image(const string &filename, const vector<DetectedSymbol>
   for(int i=0; i<3; i++)
     output_planes[i] = input;
 
-  for(int i=0; i<symbols.size(); i++)
-    {
+  for(int i=0; i<symbols.size(); i++){
       const DetectedSymbol &s = symbols[i];
 
       overlay_rectangle(output_planes[s.type], s.row, s.col, s.row+s.height-1, s.col+s.width-1, 255, 2);
       overlay_rectangle(output_planes[(s.type+1) % 3], s.row, s.col, s.row+s.height-1, s.col+s.width-1, 0, 2);
       overlay_rectangle(output_planes[(s.type+2) % 3], s.row, s.col, s.row+s.height-1, s.col+s.width-1, 0, 2);
 
-      if(s.type == NOTEHEAD)
-	{
-	  char str[] = {s.pitch, 0};
-	  draw_text(output_planes[0], str, s.row, s.col+s.width+1, 0, 2);
-	  draw_text(output_planes[1], str, s.row, s.col+s.width+1, 0, 2);
-	  draw_text(output_planes[2], str, s.row, s.col+s.width+1, 0, 2);
-	}
+      if(s.type == NOTEHEAD){
+		  char str[] = {s.pitch, 0};
+		  draw_text(output_planes[0], str, s.row, s.col+s.width+1, 0, 2);
+		  draw_text(output_planes[1], str, s.row, s.col+s.width+1, 0, 2);
+		  draw_text(output_planes[2], str, s.row, s.col+s.width+1, 0, 2);
+		}
     }
 
   SImageIO::write_png_file(filename.c_str(), output_planes[0], output_planes[1], output_planes[2]);
@@ -173,20 +171,18 @@ SDoublePlane convolve_general(const SDoublePlane input, const SDoublePlane filte
 
   int imageRows=input.rows();
   int imageCols=input.cols();
-  
 
   for(int i=c;i<imageRows-c;i++){
 	  for(int j=c;j<imageCols-c;j++){
 		  double temp=0;
 		  for(int u=-c;u<c;u++){
 
-		  			  for(int v=-c;v<c;v++){
+  			  for(int v=-c;v<c;v++){
+  				  temp=temp+filter[u+c][v+c] * input[i+u][j+v];
 
-		  				  temp=temp+filter[u+c][v+c] * input[i+u][j+v];
+  			  }	
 
-		  			  }
-
-		  		  }
+  		  	}	
 
 		  output[i][j]=temp;
 	  }
@@ -217,11 +213,13 @@ SDoublePlane binarize_image(const SDoublePlane image){
 void display_pixel_values(const SDoublePlane image){
 	int min=9999;
 	for(int i=0;i<image.rows();i++){
+		cout<< "row: " <<i <<endl;
 		for(int j=0;j<image.cols();j++){
 			cout<< image[i][j]<<" ";
 		}
-		cout<< endl;
+		cout<< endl <<endl;
 	}
+	cout<<"display finished"<<endl;
 }
 
 
@@ -310,7 +308,6 @@ vector<int> detect_lines(const SDoublePlane input) {
 					output_lines[i][j] = 0;
 				else
 					output_lines[i][j] = 255;
-
 			}
 		}
 
@@ -399,6 +396,132 @@ SDoublePlane find_edges(const SDoublePlane &input, double thresh=0)
   return output;
 }
 
+class HoughLine{
+	public:
+	  int votes, row, scale;
+};
+vector<HoughLine> houghtransform(const SDoublePlane &input_unfiltered){
+
+	int filtersize=2;
+  	SDoublePlane row_filter(1,filtersize);
+	for(int i=0; i<filtersize; i++)
+	  row_filter[0][i] = 1/((double) filtersize);
+	SDoublePlane col_filter(filtersize,1);
+	for(int j=0; j<filtersize; j++)
+		  col_filter[j][0] = 1/((double) filtersize);
+	SDoublePlane input = convolve_separable(input_unfiltered, row_filter,col_filter);
+
+	vector<HoughLine> res;
+	SDoublePlane voting_space(input.rows(), input.cols()/4);
+	int black = 150;
+	int white = 200;
+	int err = 5;
+	int voteerr = 10;
+
+	for(int r=0; r<input.rows(); r++){
+		for(int c=0; c<input.cols(); c++){
+			int lcol = c-1;
+			int rcol = c+1;
+			if( lcol<0 || rcol==input.cols()){
+				continue;
+			}
+			if (input[r][c] <= black && input[r][rcol] <= black && input[r][lcol] <= black){ //check the pixel to the right and left to make sure we're on a line
+				int four_below[4];
+				int i = 0;
+				int new_r = r+1;
+				bool target_black = true;
+				while(new_r < input.rows() && i < 4){
+					if(target_black && input[new_r][c] <= black){
+						four_below[i] = new_r;
+						i++;
+						target_black = false;
+					}
+					else if(!target_black && input[new_r][c] >= white){
+						target_black = true;
+					}
+					new_r++;
+				}
+				if(i != 4){ //we didn't find 4 black pixels below the current row candidate
+					continue; //move on to the next pixel
+				}
+				int diff = four_below[0] - r;
+				int new_diff = four_below[1] - four_below[0];
+				i=2;
+				while(abs(new_diff - diff) <= err && i < 4){
+					diff=new_diff;
+					new_diff = four_below[i] - four_below[i-1];
+					i++;
+				}
+				if(i==4){ //this pixel will vote for this row, with a spacing value of average diff
+					int avg_diff = (four_below[3] - r)/4;
+					voting_space[r][avg_diff]++;
+				}
+				
+			}
+		}
+	}
+	int sum = 0;
+	int numrows = 0;
+	for(int r=0; r<voting_space.rows(); r++){
+		
+		double max = *max_element(voting_space[r], voting_space[r]+voting_space.cols());
+		double pos = max_element(voting_space[r], voting_space[r]+voting_space.cols()) - voting_space[r];
+		if(max!=0){
+			numrows++;
+			sum+=max;
+			HoughLine h;
+			h.row = r;
+			h.votes = (int)max;
+			h.scale = (int)pos;
+			res.push_back(h);
+		}
+	}
+	float avg = ((float)sum)/numrows;
+	
+	vector<HoughLine> new_res;
+	for(int i=0; i<res.size(); i++){
+		if(res[i].votes>=avg*2){
+			new_res.push_back(res[i]);
+		}
+	}
+
+	res=new_res;
+	new_res.clear();
+	
+	//find the peaks in voting space
+	if(res.size()>6){
+		for(int i=0; i<res.size(); i++){
+			int votes = res[i].votes;
+			int left = i-1<0 ? 0 : res[i-1].votes;
+			int right = i+1==res.size() ? 0 : res[i+1].votes;
+			if(abs(votes-left)>=voteerr && abs(votes-right)>=voteerr){ //a peak is greater than it's neighbor on either side
+				new_res.push_back(res[i]);
+			}
+		}
+	}
+
+	res=new_res;
+	new_res.clear();
+
+	//ignore staves until after the current one has concluded (duplicate finds within a staff)
+	int ignore_until=res[0].votes>res[1].votes?res[0].row:res[1].row;
+	for(int i=0; i<res.size(); i++){
+		if(res[i].row >= ignore_until){
+			new_res.push_back(res[i]);
+			ignore_until= res[i].row + res[i].scale * 5;	
+		}
+	}
+	res=new_res;
+	
+	// for(int i = 0; i< res.size(); i++){
+	// 	cout<<"r "<<res[i].row<<": "<<res[i].votes <<" sp:"<<res[i].scale<<endl;
+	// }
+	return res;
+
+}
+
+
+
 
 //
 // This main file just outputs a few test images. You'll want to change it to do 
@@ -406,6 +529,7 @@ SDoublePlane find_edges(const SDoublePlane &input, double thresh=0)
 //
 int main(int argc, char *argv[])
 {
+
   if(!(argc >= 2))
     {
       cerr << "usage: " << argv[0] << " input_image" << endl;
@@ -415,15 +539,19 @@ int main(int argc, char *argv[])
   string input_filename(argv[1]);
   SDoublePlane input_image= SImageIO::read_png_file(input_filename.c_str());
 
+  printf("read input file\n");
+
   // test step 2 by applying mean filters to the input image
-  int filtersize=10;
+  int filtersize=2;
   SDoublePlane mean_filter(filtersize,filtersize);
   for(int i=0; i<filtersize; i++)
     for(int j=0; j<filtersize; j++)
       mean_filter[i][j] = 1/((double) filtersize*filtersize);
   SDoublePlane output_1 = convolve_general(input_image, mean_filter);
-//
-  // Separable filter
+
+  printf("mean filters passed\n");
+	
+	  // Separable filter
   SDoublePlane row_filter(1,filtersize);
   for(int i=0; i<filtersize; i++)
 	  row_filter[0][i] = 1/((double) filtersize);
@@ -432,23 +560,50 @@ int main(int argc, char *argv[])
   	  col_filter[j][0] = 1/((double) filtersize);
   SDoublePlane output_2 = convolve_separable(input_image, row_filter,col_filter);
 
-  string template1_filename(argv[2]);
+  printf("seperable filter passed\n");
+
+  //Hough lines
+  vector<HoughLine> detected_lines = houghtransform(input_image);
+  printf("Hough transform passed\n");
+
+  
+
+  string template1_filename = "template1.png";
   SDoublePlane template1_image= SImageIO::read_png_file(template1_filename.c_str());
 
-  string template2_filename(argv[3]);
+  printf("opened template1.png\n");
+
+  string template2_filename = "template2.png";
   SDoublePlane template2_image= SImageIO::read_png_file(template2_filename.c_str());
 
-  string template3_filename(argv[4]);
+  printf("opened template2.png\n");
+
+  string template3_filename = "template3.png";
   SDoublePlane template3_image= SImageIO::read_png_file(template3_filename.c_str());
 
-//
-//  // randomly generate some detected symbols -- you'll want to replace this
-//  //  with your symbol detection code obviously!
+  printf("opened template3.png\n");
+
+
   vector<DetectedSymbol> symbols;
+
+  //add detected lines
+  for(int i=0; i<detected_lines.size(); i++){
+  	int row = detected_lines[i].row;
+  	for(int j=0; j<5; j++){
+	  	DetectedSymbol s;
+	  	s.row =	row;
+	   s.col = 0;
+	   s.width = input_image.cols();
+	   s.height = 1;
+	   s.type = EIGHTHREST;
+	  	symbols.push_back(s);
+	  	row+=detected_lines[i].scale;
+  	}
+  }
 
   detect_symbols(input_image,template1_image,symbols,NOTEHEAD);
   detect_symbols(input_image,template2_image,symbols,QUARTERREST);
-  detect_symbols(input_image,template3_image,symbols,EIGHTHREST);
+	detect_symbols(input_image,template3_image,symbols,EIGHTHREST);
 
   vector<int> line_positions=detect_lines(input_image);
   compute_pitch(line_positions,symbols);
@@ -457,7 +612,8 @@ int main(int argc, char *argv[])
 
 
 
-//  write_detection_txt("detected.txt", symbols);
+
+  write_detection_txt("detected.txt", symbols);
   write_detection_image("convolution_general.png", symbols, output_1);
   write_detection_image("convolution_seperable.png", symbols, output_2);
   write_detection_image("detected.png", symbols, input_image);
