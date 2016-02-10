@@ -1037,23 +1037,6 @@ int main(int argc, char *argv[])
   vector<HoughLine> detected_lines = houghtransform(input_image);
   printf("Hough transform passed\n");
 
-  
-
-  string template1_filename = "template1.png";
-  SDoublePlane template1_image= SImageIO::read_png_file(template1_filename.c_str());
-
-  printf("opened template1.png\n");
-
-  string template2_filename = "template2.png";
-  SDoublePlane template2_image= SImageIO::read_png_file(template2_filename.c_str());
-
-  printf("opened template2.png\n");
-
-  string template3_filename = "template3.png";
-  SDoublePlane template3_image= SImageIO::read_png_file(template3_filename.c_str());
-
-  printf("opened template3.png\n");
-
 
 
 //
