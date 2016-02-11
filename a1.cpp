@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include "DrawText.h"
+#include "opencv2/opencv.hpp"
 
 using namespace std;
 
@@ -252,55 +253,51 @@ SDoublePlane convolve_general(const SDoublePlane input, const SDoublePlane filte
 {
   SDoublePlane output(input.rows(), input.cols());
  //Debasis convlution
-  // int filter_center_row=filter.rows()/2;
-  // int filter_center_col=filter.cols()/2;
+  int filter_center_row=filter.rows()/2;
+  int filter_center_col=filter.cols()/2;
 
-  // for(int i=0;i<input.rows();i++)
-  // {
-	 //  for(int j=0;j<input.cols();j++)
-	 //  {
-		//   int sum=0;
-		//   for(int k=0;k<filter.rows();k++)
-		//   {
-		// 	  for(int l=0;l<filter.cols();l++)
-		// 	  {
-		// 		  if(i-filter_center_row+k>=0 and i-filter_center_row+k<input.rows() and j-filter_center_col+l>=0 and j-filter_center_col+l<input.cols())
-		// 		  {
-		// 				  sum=sum+input[i-filter_center_row+k][j-filter_center_col+l]*filter[k][l];
-		// 		  }
-		// 	  }
-		//   }
-		//   output[i][j]=sum;
-	 //  }
-  // }
+  for(int i=0;i<input.rows();i++)
+  {
+	  for(int j=0;j<input.cols();j++)
+	  {
+		  int sum=0;
+		  for(int k=0;k<filter.rows();k++)
+		  {
+			  for(int l=0;l<filter.cols();l++)
+			  {
+				  if(i-filter_center_row+k>=0 and i-filter_center_row+k<input.rows() and j-filter_center_col+l>=0 and j-filter_center_col+l<input.cols())
+				  {
+						  sum=sum+input[i-filter_center_row+k][j-filter_center_col+l]*filter[k][l];
+				  }
+			  }
+		  }
+		  output[i][j]=sum;
+	  }
+  }
 
   // Convolution code here
-  int k=filter.rows();
-  int c=k/2;
+  // int k=filter.rows();
+  // int c=k/2;
 
-  int imageRows=input.rows();
-  int imageCols=input.cols();
+  // int imageRows=input.rows();
+  // int imageCols=input.cols();
 
-  int m,n;
-  for(int i=c;i<imageRows-c;i++){
-	  for(int j=c;j<imageCols-c;j++){
-		  double temp=0;
+  // int m,n;
+  // for(int i=c;i<imageRows-c;i++){
+	 //  for(int j=c;j<imageCols-c;j++){
+		//   double temp=0;
 
-		  for(int u=0;u<k;u++){
-			  	  	  m=k-1-u;
-		  			  for(int v=0;v<k;v++){
-		  				n=k-1-v;
-		  				temp=temp+filter[m][n] * input[i+m-c][j+n-c];
-
-  			  }	
-
-  		  	}	
-
-
-		  output[i][j]=temp;
-	  }
+		//   for(int u=0;u<k;u++){
+		// 	  	  	  m=k-1-u;
+		//   			  for(int v=0;v<k;v++){
+		//   				n=k-1-v;
+		//   				temp=temp+filter[m][n] * input[i+m-c][j+n-c];
+  // 			  }	
+	 //  	}	
+		//   output[i][j]=temp;
+	 //  }
   
-  }
+  // }
 
   return output;
 }
@@ -498,9 +495,9 @@ for(int i=0;i<symbols.size();i++){
 }
 }
 
-SDoublePlane gaussianBlurkernel(float sigma)
+SDoublePlane gaussianBlurkernel(float sigma,int filtersize)
 {
-  SDoublePlane kernel(21,21);
+  SDoublePlane kernel(filtersize,filtersize);
   int ac, bc;
   float g, sum;
   sum = 0;
@@ -723,12 +720,12 @@ SDoublePlane output_edge_detector(const SDoublePlane &input)
 	  	float sigma=0.05;// Sigma can be - 0.01, 1.0, 5.0, and 10.0
 	  	double thresh;//Could be set to 200, if not dynamic
 	  	int x_filter[3][3]={
-	  	    		  {-1,0,+1,},
+	  	    		  {-1,0,1,},
 	  	    		  {-2,0,2,},
 	  	    		  {-1,0,1}
 	  	      };
 	  	  int y_filter[3][3]={
-	  			  	  {1,2,+1,},
+	  			  	  {1,2,1,},
 	  			  	  {0,0,0,},
 	  			  	  {-1,-2,-1}
 	  	        };
@@ -746,7 +743,7 @@ SDoublePlane output_edge_detector(const SDoublePlane &input)
 	  			sobel_y_filter[i][j] = y_filter[i][j];
 	  		    }
 	  	  }
-	  	gaussian_kernel=gaussianBlurkernel(sigma);
+	  	gaussian_kernel=gaussianBlurkernel(sigma,21);
 	  	gaussianBlurImage=convolve_general(input,gaussian_kernel);
 	  	output=sobel_edge_detector(input,sobel_x_filter,sobel_y_filter);
 	  	for (int i = 0; i < output.rows(); i++)
@@ -813,7 +810,7 @@ SDoublePlane closet_edge_pixel(const SDoublePlane &input_binary_image)
 		    {
 		  	  for(int j=0;j<input_binary_image.cols();j++)
 		  	  {
-		  		vector<float> row(input_binary_image.rows());
+		  			vector<float> row(input_binary_image.rows());
 		  		  for(int k=0;k<input_binary_image.rows();k++)
 		  		  {
 
@@ -952,7 +949,25 @@ SDoublePlane FIT(const SDoublePlane &input_image,const SDoublePlane &template_im
 	return output;
 }
 
+cv::Mat doubleplane_to_mat(const SDoublePlane &source){
+	cv::Mat res(source.rows(), source.cols(), cv::DataType<float>::type);
+	for(int r=0; r<source.rows(); r++){
+		for(int c=0; c<source.cols(); c++){
+			res.at<float>(r,c) = source[r][c];
+		}
+	}
+	return res;
+}
 
+SDoublePlane mat_to_doubleplane(cv::Mat source){
+	SDoublePlane res(source.rows, source.cols);
+	for(int r=0; r<source.rows; r++){
+		for(int c=0; c<source.cols; c++){
+			res[r][c] = source.at<float>(r,c);
+		}
+	}
+	return res;
+}
 
 //
 // This main file just outputs a few test images. You'll want to change it to do
@@ -967,26 +982,76 @@ int main(int argc, char *argv[])
       return 1;
     }
 
-  string input_filename(argv[1]);
+  
+  //Define mean filter
+  int filtersize=2;
+  SDoublePlane mean_filter(filtersize,filtersize);
+  for(int i=0; i<filtersize; i++)
+    for(int j=0; j<filtersize; j++)
+      mean_filter[i][j] = 1/((double) filtersize*filtersize);
+
+  //Define seperable filter
+  SDoublePlane row_filter(1,filtersize);
+  for(int i=0; i<filtersize; i++)
+	  row_filter[0][i] = 1/((double) filtersize);
+  SDoublePlane col_filter(filtersize,1);
+  for(int j=0; j<filtersize; j++)
+  	  col_filter[j][0] = 1/((double) filtersize);
+
+	SDoublePlane gaussian = gaussianBlurkernel(1, 21);
+
+
+	/**************
+	 ** File I/O **
+  ***************/
+	string input_filename(argv[1]);
   SDoublePlane input_image= SImageIO::read_png_file(input_filename.c_str());
-
-
-
-  printf("read input file\n");
-
-/*
- *
- * Sobel gradient and edge detector
- *
- * To get the right gradient value divide sobel_x_filter and sobel_y_filter by 1/8
- */
-
   string template1_filename = "template1.png";
   SDoublePlane template1_image= SImageIO::read_png_file(template1_filename.c_str());
   string template2_filename = "template2.png";
   SDoublePlane template2_image= SImageIO::read_png_file(template2_filename.c_str());
   string template3_filename= "template3.png";
   SDoublePlane template3_image= SImageIO::read_png_file(template3_filename.c_str());
+
+  SDoublePlane conv_template1_image = convolve_general(template1_image, gaussian);
+  SDoublePlane conv_template2_image = convolve_general(template2_image, gaussian);
+  SDoublePlane conv_template3_image = convolve_general(template3_image, gaussian);
+
+  printf("File I/O completed\n");
+
+  /**************
+	 * Question 2 *
+  ***************/
+  
+  SDoublePlane output_1 = convolve_general(input_image, gaussian);
+  printf("Mean filtering completed\n");
+
+	/**************
+	 * Question 3 *
+  ***************/
+
+  SDoublePlane output_2 = convolve_separable(input_image,row_filter,col_filter);
+  printf("Seperable convolution completed\n");
+  
+  /**************
+	 * Question 4 *
+  ***************/
+
+ 	vector<DetectedSymbol> symbols;
+ 	write_detection_image("scores4.png", symbols, output_1);
+  
+  detect_symbols(output_1, conv_template1_image, symbols, NOTEHEAD);
+  detect_symbols(output_1, conv_template2_image, symbols, QUARTERREST);
+  detect_symbols(output_1, conv_template3_image, symbols, EIGHTHREST);
+  vector<int> line_positions;// = detect_lines(input_image);
+  // compute_pitch(line_positions,symbols);
+  write_detection_image("detected4.png", symbols, input_image);
+
+  printf("Question 4 completed\n");
+
+  /**************
+	 * Question 5 *
+  ***************/
 
   SDoublePlane edge_input_image(input_image.rows(),input_image.cols());
 	SDoublePlane edge_template_image1(template1_image.rows(),template1_image.cols());
@@ -997,83 +1062,97 @@ int main(int argc, char *argv[])
 	edge_template_image2=output_edge_detector(template2_image);
 	edge_template_image3=output_edge_detector(template3_image);
 
+	symbols.clear();
+  write_detection_image("edge_template_image1.png", symbols, edge_template_image1);
+  write_detection_image("edge_template_image2.png", symbols, edge_template_image2);
+  write_detection_image("edge_template_image3.png", symbols, edge_template_image3);
+  write_detection_image("edges.png", symbols, edge_input_image);
 
-/*
- *
- * End of Sobel gradient and edge detector
- */
-//----------------------------------------------------------------------------------------------------------------
+  // FIT(edge_input_image,edge_template_image1,symbols,NOTEHEAD);	
+ 	// FIT(edge_input_image,template2_image,symbols,QUARTERREST);
+  // FIT(edge_input_image,edge_template_image3,symbols,EIGHTHREST);
+  // write_detection_image("detected5.png", symbols, input_image);
 
-  vector<DetectedSymbol> symbol;
-  write_detection_image("edge_template_image1.png", symbol, edge_template_image1);
-  write_detection_image("edge_template_image2.png", symbol, edge_template_image2);
-  write_detection_image("edge_template_image3.png", symbol, edge_template_image3);
-  write_detection_image("edges.png", symbol, edge_input_image);
-
-
-  // test step 2 by applying mean filters to the input image
-  int filtersize=3;
-  SDoublePlane mean_filter(filtersize,filtersize);
-  for(int i=0; i<filtersize; i++)
-    for(int j=0; j<filtersize; j++)
-      mean_filter[i][j] = 1/((double) filtersize*filtersize);
-  SDoublePlane output_1 = convolve_general(input_image, mean_filter);
-
-  printf("mean filters passed\n");
+  printf("Question 5 completed\n");
 	
-	  // Separable filter
-  SDoublePlane row_filter(1,filtersize);
-  for(int i=0; i<filtersize; i++)
-	  row_filter[0][i] = 1/((double) filtersize);
-  SDoublePlane col_filter(filtersize,1);
-  for(int j=0; j<filtersize; j++)
-  	  col_filter[j][0] = 1/((double) filtersize);
-  SDoublePlane output_2 = convolve_separable(input_image, row_filter,col_filter);
+	/**************
+	 * Question 6 *
+  ***************/
 
-
-  printf("seperable filter passed\n");
-
-  //Hough lines
   vector<HoughLine> detected_lines = houghtransform(input_image);
-  printf("Hough transform passed\n");
-
-
-
-//
-//  // randomly generate some detected symbols -- you'll want to replace this
-//  //  with your symbol detection code obviously!
-
-  vector<DetectedSymbol> symbols;
-
-  //add detected lines
+  
+  line_positions.clear();
+  symbols.clear();
+  //create symbol versions of the detected lines
   for(int i=0; i<detected_lines.size(); i++){
   	int row = detected_lines[i].row;
   	for(int j=0; j<5; j++){
 	  	DetectedSymbol s;
 	  	s.row =	row;
-	   s.col = 0;
-	   s.width = input_image.cols();
-	   s.height = 1;
-	   s.type = EIGHTHREST;
+	   	s.col = 0;
+	   	s.width = input_image.cols();
+	   	s.height = 1;
+	   	s.type = EIGHTHREST;
 	  	symbols.push_back(s);
+	  	line_positions.push_back(row);
 	  	row+=detected_lines[i].scale;
   	}
   }
+  write_detection_image("staves.png", symbols, input_image);
 
-  detect_symbols(output_2,template1_image,symbols,NOTEHEAD);
-  detect_symbols(output_2,template2_image,symbols,QUARTERREST);
-  detect_symbols(output_2,template3_image,symbols,EIGHTHREST);
+  printf("Question 6 completed\n");
+
+  /**************
+	 * Question 7 *
+  ***************/
+
+  int sum=0;
+  for(int i=0; i<detected_lines.size(); i++){
+  	sum+=detected_lines[i].scale;
+  }
+  int avg_scale = sum/detected_lines.size();
+
+  //Scale the template images before detection
+  cv::Mat source;
+  cv::Mat dest;
+
+	cv::Size dest_size((int)(((float)avg_scale)/template1_image.rows() * template1_image.cols()), avg_scale);  //new size for notehead
+	dest = cv::Mat(dest_size, cv::DataType<float>::type);
+	source = doubleplane_to_mat(template1_image);
+	cv::resize(source,dest,dest_size);
+	SDoublePlane resize_template1_image = mat_to_doubleplane(dest);
 
 
-  vector<int> line_positions=detect_lines(input_image);
+	printf("scaled first image\n");
+
+	dest_size = cv::Size((int)(((float)avg_scale)/template1_image.rows() * template1_image.cols()), avg_scale*3);  //new size for quarterrest
+	dest = cv::Mat(dest_size, cv::DataType<float>::type);
+	source = doubleplane_to_mat(template2_image);
+	cv::resize(source,dest,dest_size);
+	SDoublePlane resize_template2_image = mat_to_doubleplane(dest);
+
+	printf("scaled second image\n");
+
+	dest_size = cv::Size((int)(((float)avg_scale)/template1_image.rows() * template1_image.cols()), avg_scale*2);  //new size for eighthrest
+	dest = cv::Mat(dest_size, cv::DataType<float>::type);
+	source = doubleplane_to_mat(template3_image);
+	cv::resize(source,dest,dest_size);
+	SDoublePlane resize_template3_image = mat_to_doubleplane(dest);
+
+	printf("scaled third image\n");
+
+  symbols.clear();
+  
+
+  detect_symbols(output_1,convolve_general(resize_template1_image,gaussian),symbols,NOTEHEAD);
+  detect_symbols(output_1,convolve_general(resize_template2_image,gaussian),symbols,QUARTERREST);
+  detect_symbols(output_1,convolve_general(resize_template3_image,gaussian),symbols,EIGHTHREST);
   compute_pitch(line_positions,symbols);
+	write_detection_image("detected7.png", symbols, input_image);
+	write_detection_txt("detected7.txt", symbols);
 
-
-
-  write_detection_txt("detected.txt", symbols);
-  write_detection_image("convolution_general.png", symbols, output_1);
-  write_detection_image("convolution_seperable.png", symbols, output_2);
-  write_detection_image("detected.png", symbols, input_image);
+ 
+ 
 
 
 }
