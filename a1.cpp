@@ -220,18 +220,21 @@ void display_pixel_values(const SDoublePlane image){
 }
 
 
-void block_image_area(SDoublePlane &hamming_matrix,int i,int j,int template_width,int template_height){
-  for(int m=i;m<i+template_height;m++){
-    for(int n=j;n<j+template_width;n++){
-      if(m!=i && n!=j){
-        hamming_matrix[m][n]=-1;
-      }
-    }
-  }
+/**
+ * This method prevents multiple overlapping squares to be drawn around a symbol
+ */
+void block_image_area(SDoublePlane &hamming_matrix,int symbol_x_coordinate,int symbbol_y_coordinate,int template_width,int template_height){
+	for(int m=symbol_x_coordinate;m<symbol_x_coordinate+template_height;m++){
+		for(int n=symbbol_y_coordinate;n<symbbol_y_coordinate+template_width;n++){
+			if(m!=symbol_x_coordinate && n!=symbbol_y_coordinate){
+				hamming_matrix[m][n]=-1;
+			}
+		}
+	}
 }
 /*
-* This method detects the symbols.
-*/
+ * This method detects the symbols by using Hamming Distance as the similarity function.
+ */
 void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,vector<DetectedSymbol> &symbols,Type type){
 
   SDoublePlane hamming_matrix(input.rows(),input.cols());
@@ -282,7 +285,7 @@ void detect_symbols(const SDoublePlane input,const SDoublePlane note_template,ve
 
 }
 /*
-* This method detect the co-ordinates of the staff lines in the image using a 3X3 kernel
+* For Q4, this method detect the coordinates of the staff lines in the image by convolution of the below kernel with the input image.
 * |-1,-1,-1|
 * | 2, 2, 2|
 * |-1,-1,-1|
@@ -336,48 +339,53 @@ vector<int> detect_lines(const SDoublePlane input) {
 }
 
 /*
-* This method computes the pitch of the detected notes.
-*/
-void compute_pitch(vector<int> line_positions,vector<DetectedSymbol> &symbols){
+ * This method computes the pitch of the detected note heads.
+ * Params:
+ * line_positions: row coordinates of detected staff lines
+ * symbols: coordinates of NOTEHEADS detected
+ * avg_scale: height of a NOTEHEAD
+ */
+void compute_pitch(vector<int> line_positions,vector<DetectedSymbol> &symbols,int avg_scale){
 
-  for(int i=0;i<symbols.size();i++){
-    for(int j=0;j<=(line_positions.size()/10-1);j++){
+for(int i=0;i<symbols.size();i++){
 
-      if(symbols[i].type==NOTEHEAD){
-        if(symbols[i].row+5 <line_positions[1+j*10] || (symbols[i].row+5>line_positions[4+j*10]-3 && symbols[i].row+5<line_positions[4+j*10]+3) ||(symbols[i].row+5>line_positions[6+j*10]+5 && symbols[i].row+5<line_positions[6+j*10]+8)||(symbols[i].row+5>line_positions[10+j*10]-3 && symbols[i].row+5<line_positions[10+j*10]+3) ){
-          symbols[i].pitch='G';
-          break;
-        }
-        else if((symbols[i].row+5>line_positions[1+j*10]-3 && symbols[i].row+5 <=line_positions[1+j*10]+3)||(symbols[i].row+5>line_positions[4+j*10]+5 && symbols[i].row+5 <=line_positions[4+j*10]+8) ||(symbols[i].row+5>line_positions[7+j*10]-3 && symbols[i].row+5 <=line_positions[7+j*10]+3)||(symbols[i].row+5>line_positions[10+j*10]+5 && symbols[i].row+5 <=line_positions[10+j*10]+8)){
-          symbols[i].pitch='F';
-          break;
-        }
-        else if((symbols[i].row+5>line_positions[1+j*10]+5&& symbols[i].row+5 <=line_positions[1+j*10]+8)||(symbols[i].row+5>line_positions[5+j*10]-3 && symbols[i].row+5 <=line_positions[5+j*10]+3)||(symbols[i].row+5>line_positions[7+j*10]+5 && symbols[i].row+5 <=line_positions[7+j*10]+8)||((symbols[i].row+5>line_positions[10+j*10]+8 && symbols[i].row+5 <=line_positions[10+j*10]+14))){
-          symbols[i].pitch='E';
-          break;
-        }
-        else if((symbols[i].row+5>line_positions[2+j*10]-3 && symbols[i].row+5 <=line_positions[2+j*10]+3)||(symbols[i].row+5>line_positions[5+j*10]+5&& symbols[i].row+5 <=line_positions[5+j*10]+8)||(symbols[i].row+5>line_positions[8+j*10]-3&& symbols[i].row+5 <=line_positions[8+j*10]+3)){
-          symbols[i].pitch='D';
-          break;
-        }
-        else if((symbols[i].row+5>line_positions[2+j*10]+5 && symbols[i].row+5 <=line_positions[2+j*10]+8)||(symbols[i].row+5>line_positions[5+j*10]+8 && symbols[i].row+5 <=line_positions[5+j*10]+10)||(symbols[i].row+5>line_positions[6+j*10]-14 && symbols[i].row+5 <=line_positions[6+j*10]-8)||(symbols[i].row+5>line_positions[8+j*10]+5 && symbols[i].row+5 <=line_positions[8+j*10]+8)){
-          symbols[i].pitch='C';
-          break;
-        }
-        else if((symbols[i].row+5>line_positions[3+j*10]-3 && symbols[i].row+5 <=line_positions[3+j*10]+3)||(symbols[i].row+5>line_positions[5+j*10]+16 && symbols[i].row+5 <line_positions[5+j*10]+20)||(symbols[i].row+5>line_positions[6+j*10]-9 && symbols[i].row+5 <line_positions[6+j*10]-3)||(symbols[i].row+5>line_positions[9+j*10]-3 && symbols[i].row+5 <line_positions[9+j*10]+3)){
-          symbols[i].pitch='B';
-          break;
-        }
-        else if((symbols[i].row+5>line_positions[3+j*10]+5 && symbols[i].row+5 <=line_positions[3+j*10]+8) || (symbols[i].row+5>line_positions[6+j*10]-3 && symbols[i].row+5 <=line_positions[6+j*10]+3)||(symbols[i].row+5>line_positions[9+j*10]+5 && symbols[i].row+5 <=line_positions[9+j*10]+8)){
-          symbols[i].pitch='A';
-          break;
-        }
+	for(int j=0;j<=(line_positions.size()/10-1);j++){
 
-      }
+		if(symbols[i].type==NOTEHEAD){
+					if(symbols[i].row+avg_scale/2 <line_positions[0+j*10] || (symbols[i].row+avg_scale/2>line_positions[3+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2<line_positions[3+j*10]+avg_scale/3) ||(symbols[i].row+avg_scale/2>line_positions[5+j*10] && symbols[i].row+avg_scale/2<line_positions[5+j*10]+avg_scale*3/4)||(symbols[i].row+avg_scale/2>line_positions[9+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2<line_positions[9+j*10]+avg_scale/3) ){
+									symbols[i].pitch='G';
+									break;
+								}
+								else if((symbols[i].row+avg_scale/2>line_positions[0+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[0+j*10]+avg_scale/3)||(symbols[i].row+avg_scale/2>line_positions[3+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[3+j*10]+avg_scale*3/4) ||(symbols[i].row+avg_scale/2>line_positions[6+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[6+j*10]+avg_scale/3)||(symbols[i].row+avg_scale/2>line_positions[9+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[9+j*10]+avg_scale*3/4)){
+									symbols[i].pitch='F';
+									break;
+								}
+								else if((symbols[i].row+avg_scale/2>line_positions[0+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[0+j*10]+avg_scale*3/4)||(symbols[i].row+avg_scale/2>line_positions[4+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[4+j*10]+avg_scale/3)||(symbols[i].row+avg_scale/2>line_positions[6+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[6+j*10]+avg_scale*3/4)||((symbols[i].row+avg_scale/2>line_positions[9+j*10]+avg_scale*3/4 && symbols[i].row+avg_scale/2 <=line_positions[9+j*10]+avg_scale+1))){
+									symbols[i].pitch='E';
+									break;
+								}
+								else if((symbols[i].row+avg_scale/2>line_positions[1+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[1+j*10]+avg_scale/3)||(symbols[i].row+avg_scale/2>=line_positions[4+j*10] && symbols[i].row+avg_scale/2 <=line_positions[4+j*10]+avg_scale*3/4)||(symbols[i].row+avg_scale/2>line_positions[7+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[7+j*10]+avg_scale/3)){
+										symbols[i].pitch='D';
+										break;
+									}
+								else if((symbols[i].row+avg_scale/2>line_positions[1+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[1+j*10]+avg_scale*3/4)||(symbols[i].row+avg_scale/2>line_positions[4+j*10]+avg_scale*3/4 && symbols[i].row+avg_scale/2 <=line_positions[4+j*10]+avg_scale)||(symbols[i].row+avg_scale/2>line_positions[5+j*10]-14 && symbols[i].row+avg_scale/2 <=line_positions[5+j*10]-avg_scale*3/4)||(symbols[i].row+avg_scale/2>line_positions[7+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[7+j*10]+avg_scale*3/4)){
+											symbols[i].pitch='C';
+											break;
+										}
+								else if((symbols[i].row+avg_scale/2>line_positions[2+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[2+j*10]+avg_scale/3)||(symbols[i].row+avg_scale/2>line_positions[4+j*10]+avg_scale && symbols[i].row+avg_scale/2 <line_positions[5+j*10]-avg_scale)||(symbols[i].row+avg_scale/2>line_positions[5+j*10]-9 && symbols[i].row+avg_scale/2 <line_positions[5+j*10]-avg_scale/3)||(symbols[i].row+avg_scale/2>line_positions[8+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <line_positions[8+j*10]+avg_scale/3)){
+												symbols[i].pitch='B';
+												break;
+											}
+								else if((symbols[i].row+avg_scale/2>line_positions[2+j*10] && symbols[i].row+avg_scale/2 <=line_positions[2+j*10]+avg_scale*3/4) || (symbols[i].row+avg_scale/2>line_positions[5+j*10]-avg_scale/3 && symbols[i].row+avg_scale/2 <=line_positions[5+j*10]+avg_scale/3)||(symbols[i].row+avg_scale/2>line_positions[8+j*10]+avg_scale/2 && symbols[i].row+avg_scale/2 <=line_positions[8+j*10]+avg_scale*3/4)){
+													symbols[i].pitch='A';
+													break;
+												}
 
-    }
+			}
 
-  }
+	}
+
+}
 }
 
 SDoublePlane gaussianBlurkernel(float sigma,int filtersize)
@@ -650,7 +658,7 @@ void fill_edge_dp(vector<int> *nls, int r, int c, int originr, int originc, SDou
 	if (dist >= dp[r][c]) {
 		return;
 	}
-	// printf("write %d %d %f\n\r",r,c,dist);
+
 	dp[r][c] = dist;
 	nls->push_back(r);
 	nls->push_back(c);
@@ -853,8 +861,13 @@ int main(int argc, char *argv[])
   detect_symbols(output_1, conv_template1_image, symbols, NOTEHEAD);
   detect_symbols(output_1, conv_template2_image, symbols, QUARTERREST);
   detect_symbols(output_1, conv_template3_image, symbols, EIGHTHREST);
-  vector<int> line_positions;// = detect_lines(input_image);
-  // compute_pitch(line_positions,symbols);
+  vector<int> line_positions;
+  if(input_filename!="music3.png"){ // NOTE: For music3, the detect_lines code written for Q4 doesn't return more than 10 lines. So in compute_pitch logic it results in segmentation fault.
+		line_positions=detect_lines(input_image);
+		line_positions.erase(line_positions.begin());
+		line_positions.erase(line_positions.begin()+10);
+		compute_pitch(line_positions,symbols,11);
+  }
   write_detection_image("detected4.png", symbols, input_image);
 
   printf("Question 4 completed\n");
@@ -950,7 +963,7 @@ int main(int argc, char *argv[])
   detect_symbols(output_1,convolve_general(resize_template1_image,gaussian),symbols,NOTEHEAD);
   detect_symbols(output_1,convolve_general(resize_template2_image,gaussian),symbols,QUARTERREST);
   detect_symbols(output_1,convolve_general(resize_template3_image,gaussian),symbols,EIGHTHREST);
-  compute_pitch(line_positions,symbols);
+  compute_pitch(line_positions,symbols,avg_scale);
   write_detection_image("detected7.png", symbols, input_image);
   write_detection_txt("detected7.txt", symbols);
 
