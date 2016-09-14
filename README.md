@@ -1,1 +1,2 @@
-# a1
+# a1  
+Image Recognition using convolution techniques
