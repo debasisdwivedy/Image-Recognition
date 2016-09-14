@@ -1,2 +1,2 @@
 # a1  
-Image Recognition using convolution techniques
+Image Recognition using convolution, edge detection and Staff detection
